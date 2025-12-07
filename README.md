@@ -59,21 +59,13 @@ Follow prompts to authenticate and enter target number.
 
 ## How It Works
 
-1. **Probe Messages**: Sends harmless reaction messages to non-existent message IDs
-2. **RTT Measurement**: Measures time between send and delivery acknowledgment
-3. **State Detection**: Analyzes RTT patterns to determine device state:
-   - **Online**: Low RTT (~200-800ms) - actively using device
-   - **Standby**: Higher RTT (~1000-3000ms) - idle/screen off
-   - **Offline**: Very high RTT or timeout (>5000ms)
+The tracker sends reaction messages to non-existent message IDs, which triggers no notifications at the target. The time between sending the probe message and receiving the CLIENT ACK (Status 3) is measured as RTT. Device state is detected using a dynamic threshold calculated as 90% of the median RTT: values below the threshold indicate active usage, values above indicate standby mode. Measurements are stored in a history and the median is continuously updated to adapt to different network conditions.
 
-**The vulnerability:** Devices respond significantly faster when actively in use compared to standby mode. The attack is completely silent - no notifications, no visible messages.
+## Known Issues
 
-## Understanding Output
+1. **Offline Detection Bug**: The offline detection is currently not working reliably
 
-- **RTT (ms)**: Current round-trip time
-- **Avg(3)**: Moving average of last 3 measurements
-- **State**: Online / Standby / Offline / Calibrating
-- **Threshold**: Baseline for state detection
+If you have time and interest, feel free to submit a pull request to fix these issues.
 
 ## Project Structure
 
@@ -89,54 +81,11 @@ device-activity-tracker/
 
 ## How to Protect Yourself
 
-This attack exploits fundamental design flaws in messaging apps. Here are ways to mitigate the risk:
-
-### For Users
-
-1. **Block Unknown Numbers**
-   - In WhatsApp: Settings → Privacy → Messages → "My contacts"
-   - This prevents unknown numbers from sending you any messages (including silent reactions)
-   - **Most effective protection available to end users**
-
-2. **Disable Read Receipts** (Limited effectiveness)
-   - Helps with regular messages but NOT with this specific attack
-   - Silent delivery receipts are still sent regardless of this setting
-
-### For App Developers (WhatsApp, Signal, etc.)
-
-The following mitigations should be implemented to fix this vulnerability:
-
-1. **RTT Normalization**
-   - Add artificial delays to delivery receipts
-   - Normalize all RTT responses to a consistent timeframe (~2000ms ±200ms)
-   - Randomize response timing to prevent pattern detection
-
-2. **Rate Limiting**
-   - Implement strict rate limits on probe-like messages
-   - Detect and block accounts sending repeated reactions to non-existent messages
-   - Exponential backoff for suspicious activity patterns
-
-3. **Behavioral Analysis**
-   - Flag accounts with abnormal messaging patterns
-   - Temporary throttling for suspected tracking behavior
-   - Require CAPTCHA verification for suspicious accounts
-
-4. **OS-Level Protection** (iOS/Android)
-   - Implement consistent network response times regardless of device state
-   - Add noise to all network timing at the OS level
-   - Queue low-priority messages during standby with artificial delays
-
-**Status:** As of December 2025, these protections are NOT implemented in WhatsApp or Signal. This vulnerability remains exploitable.
+The most effective protection is to enable "My Contacts" in WhatsApp under Settings → Privacy → Advanced. This prevents unknown numbers from sending you messages (including silent reactions). Disabling read receipts helps with regular messages but does not protect against this specific attack. As of December 2025, this vulnerability remains exploitable in WhatsApp and Signal.
 
 ## Ethical & Legal Considerations
 
-**⚠️ Important:**
-- For **research and education only**
-- Do NOT track people without explicit consent
-- May violate privacy laws in your jurisdiction
-- Highlights need for better privacy protections in messaging apps
-
-**Authentication data** (`auth_info_baileys/`) is stored locally - never commit to version control.
+⚠️ For research and educational purposes only. Never track people without explicit consent - this may violate privacy laws. Authentication data (`auth_info_baileys/`) is stored locally and must never be committed to version control.
 
 ## Citation
 
